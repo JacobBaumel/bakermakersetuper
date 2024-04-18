@@ -4,3 +4,6 @@
 [submodule "libs/imgui"]
 	path = libs/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "libs/libromfs"]
+	path = libs/libromfs
+	url = https://github.com/werwolv/libromfs
