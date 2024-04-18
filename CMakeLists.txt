@@ -16,7 +16,9 @@ add_subdirectory(libs/miniz)
 add_executable(bakermakersetuper src/main.cpp libs/imgui/imgui.cpp libs/imgui/imgui_draw.cpp
         libs/imgui/imgui_tables.cpp libs/imgui/imgui_widgets.cpp
         libs/imgui/backends/imgui_impl_glfw.cpp libs/imgui/backends/imgui_impl_opengl3.cpp
-        src/libs/imfilebrowser.cpp)
+        src/libs/imfilebrowser.cpp
+        src/ThreadedExtractor.cpp
+        src/libs/improgress.cpp)
 
 target_link_libraries(bakermakersetuper PUBLIC glfw opengl32 gdi32 imm32 ${LIBROMFS_LIBRARY} miniz)
 target_include_directories(bakermakersetuper PUBLIC libs/glfw/include libs/imgui

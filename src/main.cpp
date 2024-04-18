@@ -124,28 +124,3 @@ int main() {
 
     return 0;
 }
-
-void extractZip(const void* archivefile, size_t size, const char* basepath) {
-    mz_zip_archive arch;
-    memset(&arch, 0, sizeof(arch));
-    mz_zip_reader_init_mem(&arch, archivefile, size, 0);
-    mz_uint numfiles = mz_zip_reader_get_num_files(&arch);
-
-    if(!std::filesystem::directory_entry(basepath).exists()) std::filesystem::create_directories(basepath);
-
-    for (mz_uint i = 0; i < numfiles; i++) {
-        char archname[128];
-        mz_zip_reader_get_filename(&arch, i, archname, 128);
-        char diskname[1 + strlen(basepath) + strlen(archname)];
-        strcpy(diskname, basepath);
-        strcat(diskname, archname);
-
-        if(mz_zip_reader_is_file_a_directory(&arch, i))
-            std::filesystem::create_directories(std::string(diskname));
-
-        else
-            mz_zip_reader_extract_file_to_file(&arch, archname, diskname, 0);
-    }
-
-    mz_zip_reader_end(&arch);
-}
