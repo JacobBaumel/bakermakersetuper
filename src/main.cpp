@@ -5,13 +5,20 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "imfilebrowser.h"
+
+constexpr int ZIP_PICKER_FLAGS = ImGuiFileBrowserFlags_ConfirmOnEnter;
+constexpr int FOLDER_PICKER_FLAGS = ImGuiFileBrowserFlags_SelectDirectory | ImGuiFileBrowserFlags_CreateNewDir |
+                                    ImGuiFileBrowserFlags_HideRegularFiles | ImGuiFileBrowserFlags_ConfirmOnEnter;
+
+
 int main() {
     if(!glfwInit()) {
         std::cout << "Error initing glfw" << std::endl;
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(750, 500, "Window", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(750, 500, "Window", nullptr, nullptr);
     if(!window) {
         std::cout << "Error creating window!" << std::endl;
         return -1;
@@ -22,8 +29,7 @@ int main() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void) io;
+    ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.IniFilename = nullptr;
@@ -37,6 +43,16 @@ int main() {
                              ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
     bool open = true;
 
+    ImGui::FileBrowser zipPicker(ZIP_PICKER_FLAGS);
+    zipPicker.SetTitle("Test");
+    zipPicker.SetTypeFilters({".zip"});
+
+    ImGui::FileBrowser folderPicker(FOLDER_PICKER_FLAGS);
+    folderPicker.SetTitle("Pick Folder");
+
+    std::string zipName;
+    std::string folderOutput;
+
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -48,7 +64,35 @@ int main() {
         ImGui::SetNextWindowSize(ImGui::GetMainViewport()->Size);
 
         if(ImGui::Begin("Bakermaker", &open, flags)) {
-            ImGui::TextUnformatted("hello world");
+            if(ImGui::Button("Open File Dialogue")) {
+                zipPicker.Open();
+            }
+
+            if(ImGui::Button("Open Folder Picker Dialogue")) {
+                folderPicker.Open();
+            }
+
+            zipPicker.Display();
+            folderPicker.Display();
+
+            if(zipPicker.HasSelected()) {
+                zipName = zipPicker.GetSelected().string();
+                zipPicker.ClearSelected();
+                zipPicker.Close();
+            }
+
+            if(folderPicker.HasSelected()) {
+                folderOutput = folderPicker.GetSelected().string();
+                folderPicker.ClearSelected();
+                folderPicker.Close();
+            }
+
+            if(!zipName.empty()) ImGui::TextUnformatted(zipName.c_str());
+            if(!folderOutput.empty()) ImGui::TextUnformatted(folderOutput.c_str());
+
+            if(ImGui::Button("Extract")) {
+
+            }
         }
 
         ImGui::End();
