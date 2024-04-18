@@ -7,15 +7,10 @@
 
 #include "imfilebrowser.h"
 
-#include "miniz.h"
-#include "romfs/romfs.hpp"
 
 constexpr int ZIP_PICKER_FLAGS = ImGuiFileBrowserFlags_ConfirmOnEnter;
 constexpr int FOLDER_PICKER_FLAGS = ImGuiFileBrowserFlags_SelectDirectory | ImGuiFileBrowserFlags_CreateNewDir |
                                     ImGuiFileBrowserFlags_HideRegularFiles | ImGuiFileBrowserFlags_ConfirmOnEnter;
-
-void extractZip(const void* archivefile, size_t size, const char* basepath);
-
 
 int main() {
     if(!glfwInit()) {
@@ -97,8 +92,6 @@ int main() {
             if(!folderOutput.empty()) ImGui::TextUnformatted(folderOutput.c_str());
 
             if(ImGui::Button("Extract")) {
-                romfs::Resource zipfile = romfs::get("PortableGit.zip");
-                extractZip(zipfile.data(), zipfile.size(), folderOutput.c_str());
             }
         }
 
