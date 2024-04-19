@@ -1,5 +1,9 @@
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+
 #include "GLFW/glfw3.h"
 #include <iostream>
+#include <vector>
+#include <fstream>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -13,6 +17,8 @@
 constexpr int FOLDER_PICKER_FLAGS = ImGuiFileBrowserFlags_SelectDirectory | ImGuiFileBrowserFlags_CreateNewDir |
         ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_HideRegularFiles |
         ImGuiFileBrowserFlags_ConfirmOnEnter;
+
+void sshsteps(int step, string keyfile);
 
 int main() {
     if(!glfwInit()) {
@@ -51,10 +57,19 @@ int main() {
     std::string folderOutput;
 
     const ImU32 fg = ImGui::GetColorU32(ImVec4(0.9, 0.9, 0.9, 1));
-    const ImU32 bg = ImGui::GetColorU32(ImVec4(0.1, 0.1, 0.1, 1));
+    const ImU32 bg = ImGui::GetColorU32(ImVec4(0.1, 0.1, 0.5, 1));
 
     bakermaker::ThreadedExtractor* extr = nullptr;
-    bool hasExtractionStarted = false;
+
+    std::vector<string> keys;
+    for(const auto &entry: std::filesystem::directory_iterator("keys/")) {
+        string filepath = entry.path().string();
+        keys.push_back(filepath.substr(filepath.find_last_of('/') + 1));
+    }
+
+    int selectedkey = 0;
+    int programstate = 0;
+    int sshdone = 0;
 
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -67,40 +82,96 @@ int main() {
         ImGui::SetNextWindowSize(ImGui::GetMainViewport()->Size);
 
         if(ImGui::Begin("Bakermaker", &open, flags)) {
-            if(ImGui::Button("Open Folder Picker Dialogue")) {
-                folderPicker.Open();
-            }
+            switch(programstate) {
+                case 0:
 
-            folderPicker.Display();
+                    if(ImGui::Button("Open Folder Picker Dialogue")) {
+                        folderPicker.Open();
+                    }
 
-            if(folderPicker.HasSelected()) {
-                folderOutput = folderPicker.GetSelected().string();
-                folderOutput.append("\\");
-                folderPicker.ClearSelected();
-                folderPicker.Close();
-            }
+                    folderPicker.Display();
 
-            if(!hasExtractionStarted) {
-                if(ImGui::Button("Extract")) {
-                    extr = new bakermaker::ThreadedExtractor("PortableGit.zip", folderOutput, true);
-                    hasExtractionStarted = true;
-                    extr->start();
-                }
-            }
+                    if(folderPicker.HasSelected()) {
+                        folderOutput = folderPicker.GetSelected().string();
+                        folderOutput.append("\\");
+                        folderPicker.ClearSelected();
+                        folderPicker.Close();
+                    }
 
-            else if(extr != nullptr){
-                if(!extr->isFinished()) {
-                    ImGui::Text("Extracting: %i / %i", extr->getFinishedFiles(), extr->getTotalFiles());
-                    ImGui::BufferingBar("##extraction_progress",
-                                        (((float) extr->getFinishedFiles()) / extr->getTotalFiles()),
+                    ImGui::TextUnformatted("Choose key");
+                    ImGui::SameLine();
+                    ImGui::PushItemWidth(200);
+                    if(ImGui::BeginCombo("##keypicker", keys[selectedkey].c_str())) {
+                        for(size_t i = 0; i < keys.size(); i++) {
+                            if(ImGui::Selectable(keys[i].c_str(), i == selectedkey)) selectedkey = i;
+                        }
+                        ImGui::EndCombo();
+
+                    }
+
+                    if(ImGui::Button("Start")) {
+                        extr = new bakermaker::ThreadedExtractor("PortableGit.zip", folderOutput, true);
+                        extr->start();
+                        programstate++;
+                    }
+
+                    break;
+
+                case 1:
+                    ImGui::Text("Extracting Git to: %s", folderOutput.c_str());
+                    ImGui::Text("Setting key as: %s", keys[selectedkey].c_str());
+                    ImGui::NewLine();
+
+                    if(!extr->isFinished()) {
+                        ImGui::Text("Extracting: %i / %i", extr->getFinishedFiles(), extr->getTotalFiles());
+                        ImGui::BufferingBar("##extraction_progress",
+                                            (((float) extr->getFinishedFiles()) / extr->getTotalFiles()),
+                                            ImVec2(100, 5), bg, fg);
+                    } else {
+                        ImGui::Text("Extracting: Done");
+                        ImGui::BufferingBar("##extraction_progress", 1,
+                                            ImVec2(100, 5), bg, fg);
+                    }
+
+                    ImGui::NewLine();
+
+                    if(sshdone != 2) {
+                        ImGui::Text("SSH Steps Complete: %i / 5", sshdone);
+                        ImGui::BufferingBar("#sshsteps", (sshdone / 5.0),
+                                            ImVec2(100, 5), bg, fg);
+                        sshsteps(sshdone++, keys[selectedkey]);
+                    }
+
+                    else {
+                        ImGui::Text("SSH Steps Complete");
+                        ImGui::BufferingBar("#sshsteps", 1,
+                                            ImVec2(100, 5), bg, fg);
+                    }
+
+                    if(extr->isFinished() && sshdone == 2) {
+                        extr->join();
+                        delete extr;
+                        extr = nullptr;
+                        programstate++;
+                    }
+                    break;
+
+                case 2:
+                    ImGui::Text("Extracting Git to: %s", folderOutput.c_str());
+                    ImGui::Text("Setting key as: %s", keys[selectedkey].c_str());
+
+                    ImGui::NewLine();
+
+                    ImGui::Text("Extracting: Done");
+                    ImGui::BufferingBar("##extraction_progress", 1,
                                         ImVec2(100, 5), bg, fg);
-                }
 
-                else {
-                    extr->join();
-                    delete extr;
-                    extr = nullptr;
-                }
+                    ImGui::NewLine();
+
+                    ImGui::Text("SSH Steps Complete");
+                    ImGui::BufferingBar("#sshsteps", 1,
+                                        ImVec2(100, 5), bg, fg);
+                    break;
             }
         }
         ImGui::End();
@@ -125,4 +196,47 @@ int main() {
     glfwTerminate();
 
     return 0;
+}
+
+void sshsteps(int step, string keyfile) {
+    string path(getenv("HOMEDRIVE"));
+    path.append(getenv("HOMEPATH"));
+
+    switch(step) {
+        case 0: {
+            if(!std::filesystem::directory_entry(path + "\\.sssh").exists())
+                std::filesystem::create_directories(path + "\\.sssh");
+            return;
+        }
+
+        case 1: {
+            std::stringstream sshconfig;
+            sshconfig << "Host git\n\tHostName ";
+            std::ifstream ip("ip");
+            {
+                string temp;
+                ip >> temp;
+                sshconfig << temp;
+            }
+
+            sshconfig << "\n\tUser git\n\tIdentityFile ~/.ssh/" << keyfile;
+            std::ofstream config(path + "\\.sssh\\config");
+            config << sshconfig.str();
+        }
+
+        case 2: {
+            std::filesystem::copy("keys\\" + keyfile, path + "\\.sssh\\" + keyfile);
+        }
+
+        case 3: {
+            std::stringstream gitconfig;
+            gitconfig << "[user]\n\tname = " << keyfile << "\n";
+            gitconfig << "\temail = " << keyfile;
+            std::ofstream gitconfigfile(path + "\\.gitconfigg");
+            gitconfigfile << gitconfig.str();
+        }
+
+        default:
+            return;
+    }
 }

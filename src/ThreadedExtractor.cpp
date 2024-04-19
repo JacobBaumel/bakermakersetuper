@@ -19,7 +19,6 @@ namespace bakermaker {
         else mz_zip_reader_init_file(archive_, archive.c_str(), 0);
 
         totalFiles_ = mz_zip_reader_get_num_files(archive_);
-        canAccessFinished_.unlock();
     }
 
     ThreadedExtractor::~ThreadedExtractor() {
@@ -28,18 +27,13 @@ namespace bakermaker {
     }
 
     void ThreadedExtractor::start() {
-        canAccessFinished_.lock();
         finished_ = false;
         finishedFiles_ = 0;
-        canAccessFinished_.unlock();
         extractionThread_ = new std::thread(&ThreadedExtractor::extractor, this);
     }
 
     bool ThreadedExtractor::isFinished() {
-        canAccessFinished_.lock();
-        bool finished = finished_;
-        canAccessFinished_.unlock();
-        return finished;
+        return finished_;
     }
 
     void ThreadedExtractor::join() {
@@ -48,10 +42,7 @@ namespace bakermaker {
     }
 
     unsigned int ThreadedExtractor::getFinishedFiles() {
-        canAccessFinished_.lock();
-        unsigned int finishedFiles = finishedFiles_;
-        canAccessFinished_.unlock();
-        return finishedFiles;
+        return finishedFiles_;
     }
 
     unsigned int ThreadedExtractor::getTotalFiles() {
@@ -75,13 +66,9 @@ namespace bakermaker {
             else
                 mz_zip_reader_extract_file_to_file(archive_, archname, diskname, 0);
 
-            canAccessFinished_.lock();
             finishedFiles_++;
-            canAccessFinished_.unlock();
         }
 
-        canAccessFinished_.lock();
         finished_ = true;
-        canAccessFinished_.unlock();
     }
 }

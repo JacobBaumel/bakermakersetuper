@@ -29,9 +29,8 @@ namespace bakermaker {
         void extractor();
 
         unsigned int totalFiles_;
-        unsigned int finishedFiles_;
+        std::atomic_uint32_t finishedFiles_;
         mz_zip_archive* archive_;
-        std::mutex canAccessFinished_;
         std::atomic_bool finished_;
         std::thread* extractionThread_;
         string outFolder_;
