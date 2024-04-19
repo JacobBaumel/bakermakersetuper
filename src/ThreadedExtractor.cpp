@@ -65,7 +65,7 @@ namespace bakermaker {
         for (mz_uint i = 0; i < totalFiles_; i++) {
             char archname[128];
             mz_zip_reader_get_filename(archive_, i, archname, 128);
-            char diskname[1 + outFolder_.size() + strlen(archname)];
+            char* diskname = new char[1 + outFolder_.size() + strlen(archname)];
             strcpy(diskname, outFolder_.c_str());
             strcat(diskname, archname);
 

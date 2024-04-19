@@ -6,11 +6,13 @@
 #include "imgui_impl_opengl3.h"
 
 #include "imfilebrowser.h"
+#include "improgress.h"
 
+#include "ThreadedExtractor.h"
 
-constexpr int ZIP_PICKER_FLAGS = ImGuiFileBrowserFlags_ConfirmOnEnter;
 constexpr int FOLDER_PICKER_FLAGS = ImGuiFileBrowserFlags_SelectDirectory | ImGuiFileBrowserFlags_CreateNewDir |
-                                    ImGuiFileBrowserFlags_HideRegularFiles | ImGuiFileBrowserFlags_ConfirmOnEnter;
+        ImGuiFileBrowserFlags_CloseOnEsc | ImGuiFileBrowserFlags_HideRegularFiles |
+        ImGuiFileBrowserFlags_ConfirmOnEnter;
 
 int main() {
     if(!glfwInit()) {
@@ -43,15 +45,16 @@ int main() {
                              ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration;
     bool open = true;
 
-    ImGui::FileBrowser zipPicker(ZIP_PICKER_FLAGS);
-    zipPicker.SetTitle("Test");
-    zipPicker.SetTypeFilters({".zip"});
-
     ImGui::FileBrowser folderPicker(FOLDER_PICKER_FLAGS);
     folderPicker.SetTitle("Pick Folder");
 
-    std::string zipName;
     std::string folderOutput;
+
+    const ImU32 fg = ImGui::GetColorU32(ImVec4(0.9, 0.9, 0.9, 1));
+    const ImU32 bg = ImGui::GetColorU32(ImVec4(0.1, 0.1, 0.1, 1));
+
+    bakermaker::ThreadedExtractor* extr = nullptr;
+    bool hasExtractionStarted = false;
 
     while(!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -64,22 +67,11 @@ int main() {
         ImGui::SetNextWindowSize(ImGui::GetMainViewport()->Size);
 
         if(ImGui::Begin("Bakermaker", &open, flags)) {
-            if(ImGui::Button("Open File Dialogue")) {
-                zipPicker.Open();
-            }
-
             if(ImGui::Button("Open Folder Picker Dialogue")) {
                 folderPicker.Open();
             }
 
-            zipPicker.Display();
             folderPicker.Display();
-
-            if(zipPicker.HasSelected()) {
-                zipName = zipPicker.GetSelected().string();
-                zipPicker.ClearSelected();
-                zipPicker.Close();
-            }
 
             if(folderPicker.HasSelected()) {
                 folderOutput = folderPicker.GetSelected().string();
@@ -88,13 +80,29 @@ int main() {
                 folderPicker.Close();
             }
 
-            if(!zipName.empty()) ImGui::TextUnformatted(zipName.c_str());
-            if(!folderOutput.empty()) ImGui::TextUnformatted(folderOutput.c_str());
+            if(!hasExtractionStarted) {
+                if(ImGui::Button("Extract")) {
+                    extr = new bakermaker::ThreadedExtractor("PortableGit.zip", folderOutput, true);
+                    hasExtractionStarted = true;
+                    extr->start();
+                }
+            }
 
-            if(ImGui::Button("Extract")) {
+            else if(extr != nullptr){
+                if(!extr->isFinished()) {
+                    ImGui::Text("Extracting: %i / %i", extr->getFinishedFiles(), extr->getTotalFiles());
+                    ImGui::BufferingBar("##extraction_progress",
+                                        (((float) extr->getFinishedFiles()) / extr->getTotalFiles()),
+                                        ImVec2(100, 5), bg, fg);
+                }
+
+                else {
+                    extr->join();
+                    delete extr;
+                    extr = nullptr;
+                }
             }
         }
-
         ImGui::End();
 
         ImGui::Render();
@@ -107,6 +115,7 @@ int main() {
 
         glfwSwapBuffers(window);
     }
+
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
