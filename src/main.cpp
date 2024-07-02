@@ -11,6 +11,7 @@
 
 #include "imfilebrowser.h"
 #include "improgress.h"
+#include "IconSetter.h"
 
 #include "ThreadedExtractor.h"
 
@@ -34,7 +35,10 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+    setWindowIcon(window);
+    glfwSetWindowTitle(window, "Git Client Setup");
     glfwSwapInterval(1);
+
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
