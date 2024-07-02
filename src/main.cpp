@@ -204,8 +204,8 @@ void sshsteps(int step, string keyfile) {
 
     switch(step) {
         case 0: {
-            if(!std::filesystem::directory_entry(path + "\\.sssh").exists())
-                std::filesystem::create_directories(path + "\\.sssh");
+            if(!std::filesystem::directory_entry(path + "\\.ssh").exists())
+                std::filesystem::create_directories(path + "\\.ssh");
             return;
         }
 
@@ -225,14 +225,14 @@ void sshsteps(int step, string keyfile) {
         }
 
         case 2: {
-            std::filesystem::copy("keys\\" + keyfile, path + "\\.sssh\\" + keyfile);
+            std::filesystem::copy("keys\\" + keyfile, path + "\\.ssh\\" + keyfile);
         }
 
         case 3: {
             std::stringstream gitconfig;
             gitconfig << "[user]\n\tname = " << keyfile << "\n";
             gitconfig << "\temail = " << keyfile;
-            std::ofstream gitconfigfile(path + "\\.gitconfigg");
+            std::ofstream gitconfigfile(path + "\\.gitconfig");
             gitconfigfile << gitconfig.str();
         }
 
