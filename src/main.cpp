@@ -237,9 +237,15 @@ void sshsteps(int step, string keyfile) {
             sshconfig << "Host git\n\tHostName ";
             std::ifstream ip("ip");
             {
-                string temp;
-                ip >> temp;
-                sshconfig << temp;
+                string ipstring;
+                ip >> ipstring;
+                sshconfig << ipstring;
+
+                sshconfig << "\n\tPort ";
+
+                int port;
+                ip >> port;
+                sshconfig << port;
             }
 
             sshconfig << "\n\tUser git\n\tIdentityFile ~/.ssh/" << keyfile;
