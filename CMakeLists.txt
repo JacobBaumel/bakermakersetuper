@@ -26,4 +26,4 @@ target_link_libraries(bakermakersetuper PUBLIC glfw opengl32 gdi32 imm32 ${LIBRO
 target_include_directories(bakermakersetuper PUBLIC libs/glfw/include libs/imgui
         libs/imgui/backends libs/miniz include)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "gitclient")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "setupclient")
