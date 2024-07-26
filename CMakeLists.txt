@@ -27,3 +27,4 @@ target_include_directories(bakermakersetuper PUBLIC libs/glfw/include libs/imgui
         libs/imgui/backends libs/miniz include)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "setupclient")
+set_property(TARGET bakermakersetuper glfw ${LIBROMFS_LIBRARY} miniz PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
