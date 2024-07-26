@@ -248,8 +248,8 @@ void sshsteps(int step, string keyfile) {
                 sshconfig << port;
             }
 
-            sshconfig << "\n\tUser git\n\tIdentityFile ~/.ssh/" << keyfile;
-            std::ofstream config(path + "\\.ssh\\config");
+            sshconfig << "\n\tUser git\n\tIdentityFile ~/.ssh/" << keyfile << "\n\n";
+            std::ofstream config(path + "\\.ssh\\config", std::ios::app);
             config << sshconfig.str();
         }
 
