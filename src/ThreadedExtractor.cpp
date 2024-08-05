@@ -11,17 +11,16 @@ namespace bakermaker {
         archive_ = new mz_zip_archive;
         memset(archive_, 0, sizeof(mz_zip_archive));
 
-        // if(romfs) {
-        //     romfs::Resource file = romfs::get(archive);
-        //     mz_zip_reader_init_mem(archive_, file.data(), file.size(), 0);
-        // }
-        // else mz_zip_reader_init_file(archive_, archive.c_str(), 0);
-
         HRSRC info = FindResourceA(nullptr, "portablegit", "ZIPFILE");
         HGLOBAL res = LoadResource(nullptr, info);
+        auto bres = LockResource(res);
         DWORD size = SizeofResource(nullptr, info);
 
-        mz_zip_reader_init_mem(archive_, res, size, 0);
+        mz_zip_reader_init_mem(archive_, bres, size, 0);
+
+        UnlockResource(bres);
+        FreeResource(res);
+
         totalFiles_ = mz_zip_reader_get_num_files(archive_);
     }
 
