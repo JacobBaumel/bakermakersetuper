@@ -1,0 +1,3 @@
+exeicon ICON "bakermaker.ico"
+iconpng PNGIMAGE "icon.png"
+portablegit ZIPFILE "PortableGit.zip"

@@ -1,7 +1,3 @@
-//
-// Created by jacob on 4/14/24.
-//
-
 #ifndef BAKERMAKERSETUPER_THREADEDEXTRACTOR_H
 #define BAKERMAKERSETUPER_THREADEDEXTRACTOR_H
 
@@ -16,7 +12,7 @@ using std::string;
 namespace bakermaker {
     class ThreadedExtractor {
     public:
-        ThreadedExtractor(const string& archive, string   outFolder, const bool romfs);
+        ThreadedExtractor(string outFolder);
         ~ThreadedExtractor();
 
         void start();

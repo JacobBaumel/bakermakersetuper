@@ -2,22 +2,26 @@
 #include "miniz.h"
 #include <memory>
 #include <utility>
-#include "romfs/romfs.hpp"
+#include <Windows.h>
+#include <filesystem>
 
 namespace bakermaker {
-    ThreadedExtractor::ThreadedExtractor(const std::string& archive,
-                                         std::string outFolder,
-                                         const bool romfs) :
-            outFolder_(std::move(outFolder)), finished_(false) {
+    ThreadedExtractor::ThreadedExtractor(std::string outFolder) : outFolder_(std::move(outFolder)),
+                                                                  finished_(false) {
         archive_ = new mz_zip_archive;
-        memset((void*) archive_, 0, sizeof(mz_zip_archive));
+        memset(archive_, 0, sizeof(mz_zip_archive));
 
-        if(romfs) {
-            romfs::Resource file = romfs::get(archive);
-            mz_zip_reader_init_mem(archive_, file.data(), file.size(), 0);
-        }
-        else mz_zip_reader_init_file(archive_, archive.c_str(), 0);
+        // if(romfs) {
+        //     romfs::Resource file = romfs::get(archive);
+        //     mz_zip_reader_init_mem(archive_, file.data(), file.size(), 0);
+        // }
+        // else mz_zip_reader_init_file(archive_, archive.c_str(), 0);
 
+        HRSRC info = FindResourceA(nullptr, "portablegit", "ZIPFILE");
+        HGLOBAL res = LoadResource(nullptr, info);
+        DWORD size = SizeofResource(nullptr, info);
+
+        mz_zip_reader_init_mem(archive_, res, size, 0);
         totalFiles_ = mz_zip_reader_get_num_files(archive_);
     }
 
@@ -53,7 +57,7 @@ namespace bakermaker {
         if(!std::filesystem::directory_entry(outFolder_).exists())
             std::filesystem::create_directories(outFolder_);
 
-        for (mz_uint i = 0; i < totalFiles_; i++) {
+        for(mz_uint i = 0; i < totalFiles_; i++) {
             char archname[128];
             mz_zip_reader_get_filename(archive_, i, archname, 128);
             char* diskname = new char[1 + outFolder_.size() + strlen(archname)];
